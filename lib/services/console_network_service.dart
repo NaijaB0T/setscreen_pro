@@ -200,6 +200,7 @@ class ConsoleServer {
       <span id="state">Connecting to actor device...</span>
     </div>
     <div class="grid">
+      <div style="grid-column: 1 / -1; margin-top: 8px; font-size: 11px; font-weight: 800; color: #888888; text-transform: uppercase; letter-spacing: 1px;">🎮 Viewport Controls</div>
       <button class="primary" onclick="sendCommand('trigger_key')">⌨️ Type Next Key</button>
       <button class="success" onclick="sendCommand('force_ring')">📞 Force Call Ring</button>
       <button class="accent" onclick="sendCommand('disconnect')">📴 Disconnect Call</button>
@@ -207,6 +208,17 @@ class ConsoleServer {
       <button class="primary" onclick="sendCommand('toggle_lock')">🔒 Toggle Screen Lock</button>
       <button onclick="sendCommand('scroll_next')">📜 Scroll Next Page / Feed</button>
       <button onclick="sendCommand('trigger_search')">🔍 Trigger Web Search</button>
+
+      <div style="grid-column: 1 / -1; margin-top: 16px; font-size: 11px; font-weight: 800; color: #888888; text-transform: uppercase; letter-spacing: 1px;">📺 Remote Screen Navigation</div>
+      <button class="primary" onclick="navigate('green_screen')">🟢 Go to Green Screen</button>
+      <button class="primary" onclick="navigate('messages')">💬 Go to Messages</button>
+      <button class="primary" onclick="navigate('call')">📞 Go to Audio Call</button>
+      <button class="primary" onclick="navigate('video_call')">📹 Go to Video Call</button>
+      <button class="primary" onclick="navigate('playback')">📺 Go to Screen Playback</button>
+      <button class="primary" onclick="navigate('notifications')">🔔 Go to Notifications</button>
+      <button class="primary" onclick="navigate('home_screen')">📱 Go to Home Layout</button>
+      <button class="primary" onclick="navigate('social_web')">🌐 Go to Social & Web</button>
+      <button onclick="navigate('home')">🏠 Back to Portal Home</button>
     </div>
   </div>
 
@@ -245,6 +257,10 @@ class ConsoleServer {
       } else {
         alert('Console not connected to actor device!');
       }
+    }
+
+    function navigate(route) {
+      sendCommand('navigate', { data: { route } });
     }
 
     connect();
