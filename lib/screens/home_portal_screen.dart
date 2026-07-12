@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'setup_screen.dart';
+import 'green_screen_screen.dart';
 
 class HomePortalScreen extends StatelessWidget {
   const HomePortalScreen({super.key});
@@ -139,7 +140,11 @@ class HomePortalScreen extends StatelessWidget {
                     subtitle: "Chroma screen with tracking marks",
                     icon: Icons.aspect_ratio,
                     accentColor: const Color(0xFF34C759), // Green
-                    onTap: () => _showComingSoon(context),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const GreenScreenScreen()),
+                      );
+                    },
                   ),
                   _buildPortalCard(
                     context: context,
