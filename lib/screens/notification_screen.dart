@@ -173,6 +173,61 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
+  Widget _buildBannerBackground() {
+    return Stack(
+      children: [
+        // Wallpaper
+        Positioned.fill(child: _buildWallpaper()),
+        
+        // Mock home screen grid overlay
+        Positioned.fill(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 80),
+            child: GridView.count(
+              crossAxisCount: 4,
+              mainAxisSpacing: 24,
+              crossAxisSpacing: 24,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                _buildMockAppIcon(Icons.message, "Messages", Colors.green),
+                _buildMockAppIcon(Icons.phone, "Phone", Colors.blue),
+                _buildMockAppIcon(Icons.camera_alt, "Camera", Colors.grey),
+                _buildMockAppIcon(Icons.photo, "Photos", Colors.purple),
+                _buildMockAppIcon(Icons.map, "Maps", Colors.teal),
+                _buildMockAppIcon(Icons.music_note, "Music", Colors.orange),
+                _buildMockAppIcon(Icons.web, "Browser", Colors.blueGrey),
+                _buildMockAppIcon(Icons.settings, "Settings", Colors.grey[700]!),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMockAppIcon(IconData icon, String label, Color color) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: Colors.white, size: 28),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.w500),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
   Widget _buildLockScreenHeader(Color textColor) {
     return Column(
       children: [
@@ -374,7 +429,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         children: [
           // 1. Wallpaper background
           Positioned.fill(
-            child: _buildWallpaper(),
+            child: isLockStyle ? _buildWallpaper() : _buildBannerBackground(),
           ),
 
           // 2. Lock screen overlays (Clock, shortcuts)
