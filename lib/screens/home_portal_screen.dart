@@ -7,6 +7,7 @@ import 'playback_setup_screen.dart';
 import 'notification_setup_screen.dart';
 import 'home_setup_screen.dart';
 import 'console_portal_screen.dart';
+import 'social_setup_screen.dart';
 
 class HomePortalScreen extends StatelessWidget {
   const HomePortalScreen({super.key});
@@ -191,6 +192,18 @@ class HomePortalScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(builder: (context) => const HomeSetupScreen()),
+                      );
+                    },
+                  ),
+                  _buildPortalCard(
+                    context: context,
+                    title: "Prop Social & Web",
+                    subtitle: "Simulated social feeds, web searches, and maps",
+                    icon: Icons.public,
+                    accentColor: const Color(0xFFE91E63), // Pink/Rose
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const SocialSetupScreen()),
                       );
                     },
                   ),

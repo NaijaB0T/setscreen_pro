@@ -8,6 +8,7 @@ import 'video_setup_screen.dart';
 import 'playback_setup_screen.dart';
 import 'notification_setup_screen.dart';
 import 'home_setup_screen.dart';
+import 'social_setup_screen.dart';
 
 class ConsolePortalScreen extends StatefulWidget {
   const ConsolePortalScreen({super.key});
@@ -104,6 +105,9 @@ class _ConsolePortalScreenState extends State<ConsolePortalScreen> {
         break;
       case 'home_screen':
         target = const HomeSetupScreen();
+        break;
+      case 'social_web':
+        target = const SocialSetupScreen();
         break;
       default:
         return;
@@ -245,6 +249,7 @@ class _ConsolePortalScreenState extends State<ConsolePortalScreen> {
               _buildControlBtn("Playback Setup", () => _sendDirectorCommand("navigate", {"route": "playback"})),
               _buildControlBtn("Notifications Setup", () => _sendDirectorCommand("navigate", {"route": "notifications"})),
               _buildControlBtn("Home Layout Setup", () => _sendDirectorCommand("navigate", {"route": "home_screen"})),
+              _buildControlBtn("Social & Web Setup", () => _sendDirectorCommand("navigate", {"route": "social_web"})),
             ],
           ),
         ),
@@ -321,6 +326,34 @@ class _ConsolePortalScreenState extends State<ConsolePortalScreen> {
                   "Toggle Viewport Lock", 
                   () => _sendDirectorCommand("toggle_lock"),
                   Colors.greenAccent,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Social & Web control options
+        const Text("PROP SOCIAL & BROWSER SIMULATION", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white54, letterSpacing: 1)),
+        const SizedBox(height: 8),
+        _buildFrostedContainer(
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildControlBtn(
+                  "Scroll Next Page / Feed", 
+                  () => _sendDirectorCommand("scroll_next"),
+                  Colors.pinkAccent,
+                  Colors.black,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildControlBtn(
+                  "Trigger Web Search Typing", 
+                  () => _sendDirectorCommand("trigger_search"),
+                  Colors.pinkAccent,
+                  Colors.black,
                 ),
               ),
             ],
