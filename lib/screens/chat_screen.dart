@@ -165,10 +165,10 @@ class _ChatScreenState extends State<ChatScreen> {
                           CircleAvatar(
                             radius: 20,
                             backgroundColor: Colors.grey[400],
-                            backgroundImage: widget.config.avatarPath != null && widget.config.avatarPath!.isNotEmpty
+                            backgroundImage: widget.config.avatarPath != null && widget.config.avatarPath!.isNotEmpty && File(widget.config.avatarPath!).existsSync()
                                 ? FileImage(File(widget.config.avatarPath!))
                                 : null,
-                            child: widget.config.avatarPath == null || widget.config.avatarPath!.isEmpty
+                            child: widget.config.avatarPath == null || widget.config.avatarPath!.isEmpty || !File(widget.config.avatarPath!).existsSync()
                                 ? Text(
                                     _getInitials(widget.config.contactName),
                                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
