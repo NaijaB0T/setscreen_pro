@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'setup_screen.dart';
 import 'green_screen_screen.dart';
@@ -6,39 +5,11 @@ import 'call_setup_screen.dart';
 import 'video_setup_screen.dart';
 import 'playback_setup_screen.dart';
 import 'notification_setup_screen.dart';
+import 'home_setup_screen.dart';
 
 class HomePortalScreen extends StatelessWidget {
   const HomePortalScreen({super.key});
 
-  void _showComingSoon(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
-        child: AlertDialog(
-          backgroundColor: Colors.grey[900]?.withValues(alpha: 0.7) ?? Colors.black87,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Colors.white10),
-          ),
-          title: const Text(
-            "Coming Soon", 
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-          content: const Text(
-            "Coming soon in Step 2", 
-            style: TextStyle(color: Colors.white70),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("OK", style: TextStyle(color: Colors.tealAccent, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildPortalCard({
     required BuildContext context,
@@ -216,7 +187,11 @@ class HomePortalScreen extends StatelessWidget {
                     subtitle: "Home screen layout designer",
                     icon: Icons.home,
                     accentColor: const Color(0xFFFF2D55), // Magenta
-                    onTap: () => _showComingSoon(context),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const HomeSetupScreen()),
+                      );
+                    },
                   ),
                   const SizedBox(height: 40),
                 ]),
