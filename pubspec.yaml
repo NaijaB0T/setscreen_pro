@@ -39,6 +39,8 @@ dependencies:
   video_player:
   camera:
   audioplayers:
+  share_plus:
+  path_provider:
 
 dev_dependencies:
   flutter_test:
