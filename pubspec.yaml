@@ -38,6 +38,7 @@ dependencies:
   image_picker:
   video_player:
   camera:
+  audioplayers:
 
 dev_dependencies:
   flutter_test:

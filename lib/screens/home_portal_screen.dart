@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'setup_screen.dart';
 import 'green_screen_screen.dart';
+import 'call_setup_screen.dart';
 
 class HomePortalScreen extends StatelessWidget {
   const HomePortalScreen({super.key});
@@ -164,7 +165,11 @@ class HomePortalScreen extends StatelessWidget {
                     subtitle: "Incoming-call screen for film and theater",
                     icon: Icons.phone,
                     accentColor: const Color(0xFF007AFF), // Blue
-                    onTap: () => _showComingSoon(context),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const CallSetupScreen()),
+                      );
+                    },
                   ),
                   _buildPortalCard(
                     context: context,
