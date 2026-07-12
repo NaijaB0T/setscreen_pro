@@ -17,8 +17,7 @@ class _SocialSetupScreenState extends State<SocialSetupScreen> {
   final _formKey = GlobalKey<FormState>();
 
   String _style = 'photoFeed';
-  String? _wallpaperPath;
-  String? _videoPath;
+  List<String> _mediaPaths = [];
   final TextEditingController _queryController = TextEditingController();
   final TextEditingController _headlineController = TextEditingController();
   final TextEditingController _bodyController = TextEditingController();
@@ -45,8 +44,7 @@ class _SocialSetupScreenState extends State<SocialSetupScreen> {
         final config = SocialConfig.fromJson(jsonDecode(jsonStr));
         setState(() {
           _style = config.style;
-          _wallpaperPath = config.wallpaperPath;
-          _videoPath = config.videoPath;
+          _mediaPaths = config.mediaPaths;
           _queryController.text = config.customQuery;
           _headlineController.text = config.newsHeadline;
           _bodyController.text = config.newsBody;
@@ -63,56 +61,60 @@ class _SocialSetupScreenState extends State<SocialSetupScreen> {
   void _loadDefaultValues() {
     setState(() {
       _style = 'photoFeed';
-      _wallpaperPath = null;
-      _videoPath = null;
+      _mediaPaths = [];
       _queryController.text = "SetScreen Pro prop simulator";
       _headlineController.text = "BREAKING NEWS";
       _bodyController.text = "This is a mock news body text that was remotely loaded or configured on set for screen compositing.";
     });
   }
 
-  Future<void> _pickWallpaper() async {
+  Future<void> _pickMultiPhotos() async {
     final picker = ImagePicker();
     try {
-      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
+      final List<XFile> pickedFiles = await picker.pickMultiImage();
+      if (pickedFiles.isNotEmpty) {
         setState(() {
-          _wallpaperPath = pickedFile.path;
+          _mediaPaths.addAll(pickedFiles.map((file) => file.path));
         });
       }
     } catch (e) {
-      debugPrint("Error picking wallpaper image: $e");
+      debugPrint("Error picking multi photos: $e");
     }
   }
 
   Future<void> _pickVideo() async {
     final picker = ImagePicker();
     try {
-      final pickedFile = await picker.pickVideo(source: ImageSource.gallery);
+      final XFile? pickedFile = await picker.pickVideo(source: ImageSource.gallery);
       if (pickedFile != null) {
         setState(() {
-          _videoPath = pickedFile.path;
+          _mediaPaths.add(pickedFile.path);
         });
       }
     } catch (e) {
-      debugPrint("Error picking feed video: $e");
+      debugPrint("Error picking video: $e");
     }
+  }
+
+  void _removeMediaItem(int index) {
+    setState(() {
+      _mediaPaths.removeAt(index);
+    });
   }
 
   Future<void> _startTake() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_style == 'shortVideo' && (_videoPath == null || _videoPath!.isEmpty)) {
+    if ((_style == 'shortVideo' || _style == 'photoFeed') && _mediaPaths.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select a video file for shortVideo template.")),
+        const SnackBar(content: Text("Please select at least one media file for this feed.")),
       );
       return;
     }
 
     final config = SocialConfig(
       style: _style,
-      wallpaperPath: _wallpaperPath,
-      videoPath: _videoPath,
+      mediaPaths: _mediaPaths,
       customQuery: _queryController.text.trim(),
       newsHeadline: _headlineController.text.trim(),
       newsBody: _bodyController.text.trim(),
@@ -142,6 +144,65 @@ class _SocialSetupScreenState extends State<SocialSetupScreen> {
       ),
       padding: const EdgeInsets.all(16.0),
       child: child,
+    );
+  }
+
+  Widget _buildMediaThumbnailTray() {
+    if (_mediaPaths.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Center(
+          child: Text("No media added to queue", style: TextStyle(color: Colors.white38, fontSize: 12)),
+        ),
+      );
+    }
+
+    final isVideo = _style == 'shortVideo';
+
+    return SizedBox(
+      height: 110,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _mediaPaths.length,
+        itemBuilder: (context, index) {
+          final path = _mediaPaths[index];
+          final file = File(path);
+          final exists = file.existsSync();
+
+          return Stack(
+            children: [
+              Container(
+                width: 80,
+                height: 100,
+                margin: const EdgeInsets.only(right: 12, top: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white10,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.white24),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: exists
+                    ? (isVideo
+                        ? const Center(child: Icon(Icons.movie, color: Colors.white54, size: 28))
+                        : Image.file(file, fit: BoxFit.cover))
+                    : const Center(child: Icon(Icons.broken_image, color: Colors.redAccent)),
+              ),
+              Positioned(
+                top: 0,
+                right: 4,
+                child: GestureDetector(
+                  onTap: () => _removeMediaItem(index),
+                  child: const CircleAvatar(
+                    radius: 10,
+                    backgroundColor: Colors.redAccent,
+                    child: Icon(Icons.close, size: 10, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -196,6 +257,8 @@ class _SocialSetupScreenState extends State<SocialSetupScreen> {
                         if (val != null) {
                           setState(() {
                             _style = val;
+                            // Clear media queue when switching styles to prevent mismatches
+                            _mediaPaths = [];
                           });
                         }
                       },
@@ -204,82 +267,31 @@ class _SocialSetupScreenState extends State<SocialSetupScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Video/Wallpaper Pickers based on selected style
-                if (_style == 'shortVideo') ...[
-                  const Text("LOCAL VIDEO FEED SOURCE", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white54, letterSpacing: 1)),
+                // Multi-media queue widgets
+                if (_style == 'photoFeed' || _style == 'shortVideo') ...[
+                  Text(
+                    _style == 'photoFeed' ? "PHOTO FEED QUEUE SOURCE" : "VIDEO FEED QUEUE SOURCE",
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white54, letterSpacing: 1),
+                  ),
                   const SizedBox(height: 8),
                   _buildFrostedContainer(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "Select a looping video file from device gallery to run as the main vertically swipeable TikTok feed.",
-                          style: TextStyle(fontSize: 11, color: Colors.white38),
+                        Text(
+                          _style == 'photoFeed'
+                              ? "Select multiple images from the device gallery. The simulator will display them sequentially as the actor scrolls."
+                              : "Add multiple looping video files. The simulator will load them for the feed in sequence.",
+                          style: const TextStyle(fontSize: 11, color: Colors.white38),
                         ),
                         const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            ElevatedButton.icon(
-                              onPressed: _pickVideo,
-                              icon: const Icon(Icons.video_library),
-                              label: const Text("Select Video"),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                _videoPath != null
-                                    ? "Selected: ${_videoPath!.split('/').last}"
-                                    : "No video selected",
-                                style: const TextStyle(fontSize: 12, color: Colors.white38),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+                        ElevatedButton.icon(
+                          onPressed: _style == 'photoFeed' ? _pickMultiPhotos : _pickVideo,
+                          icon: const Icon(Icons.add_photo_alternate),
+                          label: Text(_style == 'photoFeed' ? "Choose Feed Photos" : "Add Video"),
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                ] else if (_style == 'photoFeed' || _style == 'navigation') ...[
-                  const Text("FEED WALLPAPER BACKDROP", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white54, letterSpacing: 1)),
-                  const SizedBox(height: 8),
-                  _buildFrostedContainer(
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            ElevatedButton.icon(
-                              onPressed: _pickWallpaper,
-                              icon: const Icon(Icons.wallpaper),
-                              label: const Text("Select Backdrop"),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                _wallpaperPath != null
-                                    ? "Selected: ${_wallpaperPath!.split('/').last}"
-                                    : "No wallpaper selected (uses standard placeholder)",
-                                style: const TextStyle(fontSize: 12, color: Colors.white38),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (_wallpaperPath != null && File(_wallpaperPath!).existsSync()) ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            height: 120,
-                            width: 80,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.white24),
-                              image: DecorationImage(
-                                image: FileImage(File(_wallpaperPath!)),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                        ],
+                        const SizedBox(height: 16),
+                        _buildMediaThumbnailTray(),
                       ],
                     ),
                   ),

@@ -25,6 +25,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> with SingleTickerPr
   // Video controller for shortVideo (TikTok style)
   VideoPlayerController? _videoPlayerController;
   bool _isVideoInitialized = false;
+  int _currentVideoIndex = 0;
 
   // Search template auto-typing states
   bool _isTyping = false;
@@ -47,7 +48,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> with SingleTickerPr
   @override
   void initState() {
     super.initState();
-    _initializeTemplateAssets();
+    _initializeFirstVideo();
 
     // Map arrow animation controller setup
     _mapAnimationController = AnimationController(
@@ -85,27 +86,45 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> with SingleTickerPr
     super.dispose();
   }
 
-  Future<void> _initializeTemplateAssets() async {
-    if (widget.config.style == 'shortVideo') {
-      final path = widget.config.videoPath;
-      if (path != null && path.isNotEmpty) {
-        try {
-          final file = File(path);
-          if (await file.exists()) {
-            _videoPlayerController = VideoPlayerController.file(file);
-            await _videoPlayerController!.initialize();
-            await _videoPlayerController!.setLooping(true);
-            await _videoPlayerController!.play();
-            if (mounted) {
-              setState(() {
-                _isVideoInitialized = true;
-              });
-            }
-          }
-        } catch (e) {
-          debugPrint("Error loading short video template: $e");
+  void _initializeFirstVideo() {
+    if (widget.config.style == 'shortVideo' && widget.config.mediaPaths.isNotEmpty) {
+      _loadVideoForIndex(0);
+    }
+  }
+
+  Future<void> _loadVideoForIndex(int index) async {
+    if (widget.config.mediaPaths.isEmpty) return;
+
+    final path = widget.config.mediaPaths[index % widget.config.mediaPaths.length];
+
+    // Dispose old controller first to free up hardware decoders
+    if (_videoPlayerController != null) {
+      await _videoPlayerController!.dispose();
+      _videoPlayerController = null;
+      if (mounted) {
+        setState(() {
+          _isVideoInitialized = false;
+        });
+      }
+    }
+
+    try {
+      final file = File(path);
+      if (await file.exists()) {
+        final controller = VideoPlayerController.file(file);
+        _videoPlayerController = controller;
+        await controller.initialize();
+        await controller.setLooping(true);
+        await controller.play();
+        if (mounted && _videoPlayerController == controller) {
+          setState(() {
+            _isVideoInitialized = true;
+            _currentVideoIndex = index;
+          });
         }
       }
+    } catch (e) {
+      debugPrint("Error loading feed video at index $index: $e");
     }
   }
 
@@ -204,19 +223,25 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> with SingleTickerPr
 
   // --- SUB-TEMPLATES ---
 
-  // 1. TikTok style short video
+  // 1. TikTok style short video page layout
   Widget _buildShortVideoView() {
     return PageView.builder(
       controller: _pageController,
       scrollDirection: Axis.vertical,
       physics: _isLocked ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
-      itemCount: 5,
+      onPageChanged: (index) {
+        _loadVideoForIndex(index);
+      },
+      itemCount: widget.config.mediaPaths.isNotEmpty ? widget.config.mediaPaths.length : 1,
       itemBuilder: (context, index) {
+        final hasMedia = widget.config.mediaPaths.isNotEmpty;
+        final isCurrentIndexLoaded = _isVideoInitialized && _currentVideoIndex == index && _videoPlayerController != null;
+
         return Stack(
           children: [
             // Video Loop background
             Positioned.fill(
-              child: _isVideoInitialized && _videoPlayerController != null
+              child: hasMedia && isCurrentIndexLoaded
                   ? FittedBox(
                       fit: BoxFit.cover,
                       child: SizedBox(
@@ -228,7 +253,14 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> with SingleTickerPr
                   : Container(
                       color: Colors.black,
                       child: const Center(
-                        child: Icon(Icons.movie_creation_outlined, size: 64, color: Colors.white24),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.movie_creation_outlined, size: 64, color: Colors.white24),
+                            SizedBox(height: 8),
+                            Text("Loading looping feed video...", style: TextStyle(color: Colors.white38, fontSize: 12)),
+                          ],
+                        ),
                       ),
                     ),
             ),
@@ -236,7 +268,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> with SingleTickerPr
             // Vignette overlay
             Positioned.fill(
               child: Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
@@ -257,9 +289,9 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> with SingleTickerPr
               bottom: 120,
               child: Column(
                 children: [
-                  _buildTikTokIcon(Icons.favorite, "1.2M"),
-                  _buildTikTokIcon(Icons.chat_bubble, "48K"),
-                  _buildTikTokIcon(Icons.reply, "240K"),
+                  _buildTikTokIcon(Icons.favorite, "${(index + 1) * 2}1K"),
+                  _buildTikTokIcon(Icons.chat_bubble, "${(index + 1) * 3}K"),
+                  _buildTikTokIcon(Icons.reply, "Share"),
                 ],
               ),
             ),
@@ -272,13 +304,13 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> with SingleTickerPr
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "@setscreenpro",
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16),
+                  Text(
+                    "@setscreenpro_feed_${index + 1}",
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    "Simulating short videos for film and theater production #${index + 1} #setscreen",
+                    "Simulating multi-media feeds for screen compositing. Video #${index + 1} #setscreen",
                     style: const TextStyle(color: Colors.white70, fontSize: 13),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -307,17 +339,18 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> with SingleTickerPr
 
   // 2. Instagram style photo feed
   Widget _buildPhotoFeedView() {
-    final hasWallpaper = widget.config.wallpaperPath != null &&
-        widget.config.wallpaperPath!.isNotEmpty &&
-        File(widget.config.wallpaperPath!).existsSync();
-
     return Container(
       color: Colors.black,
       child: ListView.builder(
         controller: _scrollController,
         physics: _isLocked ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
-        itemCount: 10,
+        itemCount: 15,
         itemBuilder: (context, index) {
+          final mediaPath = widget.config.mediaPaths.isNotEmpty 
+              ? widget.config.mediaPaths[index % widget.config.mediaPaths.length] 
+              : null;
+          final hasMedia = mediaPath != null && File(mediaPath).existsSync();
+
           return Container(
             margin: const EdgeInsets.only(bottom: 24),
             child: Column(
@@ -343,8 +376,8 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> with SingleTickerPr
                 // Card Media Box
                 AspectRatio(
                   aspectRatio: 1,
-                  child: hasWallpaper
-                      ? Image.file(File(widget.config.wallpaperPath!), fit: BoxFit.cover)
+                  child: hasMedia
+                      ? Image.file(File(mediaPath), fit: BoxFit.cover)
                       : Container(
                           color: Colors.white.withValues(alpha: 0.05),
                           child: const Center(
