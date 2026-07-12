@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'setup_screen.dart';
 import 'green_screen_screen.dart';
 import 'call_setup_screen.dart';
+import 'video_setup_screen.dart';
 
 class HomePortalScreen extends StatelessWidget {
   const HomePortalScreen({super.key});
@@ -177,7 +178,11 @@ class HomePortalScreen extends StatelessWidget {
                     subtitle: "Pre-recorded video call with live camera",
                     icon: Icons.videocam,
                     accentColor: const Color(0xFF5856D6), // Indigo
-                    onTap: () => _showComingSoon(context),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const VideoSetupScreen()),
+                      );
+                    },
                   ),
                   _buildPortalCard(
                     context: context,
