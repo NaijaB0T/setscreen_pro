@@ -4,6 +4,7 @@ import 'setup_screen.dart';
 import 'green_screen_screen.dart';
 import 'call_setup_screen.dart';
 import 'video_setup_screen.dart';
+import 'playback_setup_screen.dart';
 
 class HomePortalScreen extends StatelessWidget {
   const HomePortalScreen({super.key});
@@ -190,7 +191,11 @@ class HomePortalScreen extends StatelessWidget {
                     subtitle: "Lockable playback screen",
                     icon: Icons.play_circle_fill,
                     accentColor: const Color(0xFFFF9500), // Orange
-                    onTap: () => _showComingSoon(context),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const PlaybackSetupScreen()),
+                      );
+                    },
                   ),
                   _buildPortalCard(
                     context: context,
