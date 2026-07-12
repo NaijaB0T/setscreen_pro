@@ -105,17 +105,43 @@ class ConsoleServer {
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
     }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      margin-bottom: 8px;
+      position: relative;
+    }
+    .nav-back-btn {
+      position: absolute;
+      left: 0;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      cursor: pointer;
+      display: none;
+      outline: none;
+    }
+    .nav-back-btn:active {
+      background: rgba(255, 255, 255, 0.2);
+    }
     h1 {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 900;
       text-align: center;
       margin-top: 0;
-      margin-bottom: 8px;
+      margin-bottom: 0;
       letter-spacing: 1.5px;
       text-transform: uppercase;
       background: linear-gradient(45deg, #ff007a, #007aff);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      padding: 8px 0;
     }
     .status {
       text-align: center;
@@ -136,6 +162,25 @@ class ConsoleServer {
     .status-dot.connected {
       background-color: #34c759;
       box-shadow: 0 0 8px #34c759;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: #888888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .info-text {
+      font-size: 13px;
+      color: #bbbbbb;
+      line-height: 1.6;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
     }
     .grid {
       display: grid;
@@ -194,31 +239,73 @@ class ConsoleServer {
 </head>
 <body>
   <div class="container">
-    <h1>SetScreen Pro Web Console</h1>
+    <div class="header">
+      <button id="back-btn" class="nav-back-btn" onclick="showView('main')">← Back</button>
+      <h1 id="title">SetScreen Pro Web Console</h1>
+    </div>
     <div class="status">
       <div id="dot" class="status-dot"></div>
       <span id="state">Connecting to actor device...</span>
     </div>
-    <div class="grid">
-      <div style="grid-column: 1 / -1; margin-top: 8px; font-size: 11px; font-weight: 800; color: #888888; text-transform: uppercase; letter-spacing: 1px;">🎮 Viewport Controls</div>
-      <button class="primary" onclick="sendCommand('trigger_key')">⌨️ Type Next Key</button>
-      <button class="success" onclick="sendCommand('force_ring')">📞 Force Call Ring</button>
-      <button class="accent" onclick="sendCommand('disconnect')">📴 Disconnect Call</button>
-      <button class="warning" onclick="sendCommand('change_color')">🎨 Toggle Chroma Color</button>
-      <button class="primary" onclick="sendCommand('toggle_lock')">🔒 Toggle Screen Lock</button>
-      <button onclick="sendCommand('scroll_next')">📜 Scroll Next Page / Feed</button>
-      <button onclick="sendCommand('trigger_search')">🔍 Trigger Web Search</button>
 
-      <div style="grid-column: 1 / -1; margin-top: 16px; font-size: 11px; font-weight: 800; color: #888888; text-transform: uppercase; letter-spacing: 1px;">📺 Remote Screen Navigation</div>
-      <button class="primary" onclick="navigate('green_screen')">🟢 Go to Green Screen</button>
-      <button class="primary" onclick="navigate('messages')">💬 Go to Messages</button>
-      <button class="primary" onclick="navigate('call')">📞 Go to Audio Call</button>
-      <button class="primary" onclick="navigate('video_call')">📹 Go to Video Call</button>
-      <button class="primary" onclick="navigate('playback')">📺 Go to Screen Playback</button>
-      <button class="primary" onclick="navigate('notifications')">🔔 Go to Notifications</button>
-      <button class="primary" onclick="navigate('home_screen')">📱 Go to Home Layout</button>
-      <button class="primary" onclick="navigate('social_web')">🌐 Go to Social & Web</button>
-      <button onclick="navigate('home')">🏠 Back to Portal Home</button>
+    <!-- MAIN VIEW (NAVIGATION) -->
+    <div id="main-view" class="view-panel">
+      <div class="section-title">📺 Remote Screen Navigation</div>
+      <div class="grid">
+        <button class="menu-btn primary" onclick="navigateToScreen('green_screen')">🟢 Green Screen Viewport</button>
+        <button class="menu-btn primary" onclick="navigateToScreen('messages')">💬 Messages Viewport</button>
+        <button class="menu-btn primary" onclick="navigateToScreen('call')">📞 Audio Call Viewport</button>
+        <button class="menu-btn" onclick="navigateToScreen('video_call')">📹 Video Call Setup</button>
+        <button class="menu-btn" onclick="navigateToScreen('playback')">📺 Screen Playback Setup</button>
+        <button class="menu-btn" onclick="navigateToScreen('notifications')">🔔 Notifications Setup</button>
+        <button class="menu-btn" onclick="navigateToScreen('home_screen')">📱 Home Layout Setup</button>
+        <button class="menu-btn" onclick="navigateToScreen('social_web')">🌐 Social & Web Viewport</button>
+      </div>
+    </div>
+
+    <!-- GREEN SCREEN CONTROLS -->
+    <div id="green_screen-view" class="view-panel" style="display: none;">
+      <div class="section-title">🟢 Green Screen Controls</div>
+      <div class="grid">
+        <button class="action-btn warning" onclick="sendCommand('change_color')">🎨 Cycle Chroma Colors</button>
+        <button class="action-btn primary" onclick="sendCommand('toggle_lock')">🔒 Toggle Viewport Lock</button>
+      </div>
+    </div>
+
+    <!-- MESSAGES CONTROLS -->
+    <div id="messages-view" class="view-panel" style="display: none;">
+      <div class="section-title">💬 Messages Controls</div>
+      <div class="grid">
+        <button class="action-btn primary" onclick="sendCommand('trigger_key')">⌨️ Type Next Key</button>
+        <button class="action-btn warning" onclick="sendCommand('trigger_opponent')">🗣️ Progress Dialog</button>
+      </div>
+    </div>
+
+    <!-- CALL CONTROLS -->
+    <div id="call-view" class="view-panel" style="display: none;">
+      <div class="section-title">📞 Audio Call Controls</div>
+      <div class="grid">
+        <button class="action-btn success" onclick="sendCommand('force_ring')">🔔 Force Call Ring</button>
+        <button class="action-btn accent" onclick="sendCommand('disconnect')">📴 Force Disconnect</button>
+      </div>
+    </div>
+
+    <!-- SOCIAL & WEB CONTROLS -->
+    <div id="social_web-view" class="view-panel" style="display: none;">
+      <div class="section-title">🌐 Social & Web Controls</div>
+      <div class="grid">
+        <button class="action-btn primary" onclick="sendCommand('scroll_next')">📜 Scroll Next Page / Feed</button>
+        <button class="action-btn warning" onclick="sendCommand('trigger_search')">🔍 Trigger Web Search</button>
+      </div>
+    </div>
+
+    <!-- GENERIC SETUP VIEW -->
+    <div id="generic-setup-view" class="view-panel" style="display: none;">
+      <div class="section-title">⚙️ Setup Dashboard Screen</div>
+      <div class="info-text">
+        This screen serves as a configuration dashboard on the actor's device.<br/><br/>
+        Configure the options locally on their device, then tap <strong>Start Take</strong> to open the live simulation viewport.
+      </div>
     </div>
   </div>
 
@@ -230,7 +317,6 @@ class ConsoleServer {
     function connect() {
       const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = proto + '//' + window.location.host + '/ws';
-      console.log('Connecting to ' + wsUrl);
       ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
@@ -243,24 +329,58 @@ class ConsoleServer {
         state.innerText = 'Disconnected. Reconnecting...';
         setTimeout(connect, 2000);
       };
-
-      ws.onerror = (err) => {
-        console.error('WebSocket error:', err);
-      };
     }
 
     function sendCommand(action, data = {}) {
       if (ws && ws.readyState === WebSocket.OPEN) {
-        const payload = JSON.stringify({ action, ...data });
-        ws.send(payload);
-        console.log('Sent command:', payload);
-      } else {
-        alert('Console not connected to actor device!');
+        ws.send(JSON.stringify({ action, ...data }));
       }
     }
 
     function navigate(route) {
       sendCommand('navigate', { data: { route } });
+    }
+
+    function navigateToScreen(route) {
+      navigate(route);
+      
+      // Determine which sub-view to display based on the route
+      if (route === 'green_screen') {
+        showView('green_screen');
+      } else if (route === 'messages') {
+        showView('messages');
+      } else if (route === 'call') {
+        showView('call');
+      } else if (route === 'social_web') {
+        showView('social_web');
+      } else if (route === 'home') {
+        showView('main');
+      } else {
+        showView('generic-setup');
+      }
+    }
+
+    function showView(viewId) {
+      // Hide all panels
+      const panels = document.querySelectorAll('.view-panel');
+      panels.forEach(p => p.style.display = 'none');
+
+      // Show requested panel
+      if (viewId === 'main') {
+        document.getElementById('main-view').style.display = 'block';
+        document.getElementById('back-btn').style.display = 'none';
+        document.getElementById('title').innerText = 'SetScreen Pro Web Console';
+      } else {
+        const targetView = document.getElementById(viewId + '-view');
+        if (targetView) {
+          targetView.style.display = 'block';
+        }
+        document.getElementById('back-btn').style.display = 'block';
+        
+        // Format title
+        const formattedTitle = viewId.replace('_', ' ').replace('-', ' ').toUpperCase() + ' PANEL';
+        document.getElementById('title').innerText = formattedTitle;
+      }
     }
 
     connect();
