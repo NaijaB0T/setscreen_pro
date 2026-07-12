@@ -148,4 +148,8 @@ class ChatController extends ChangeNotifier {
       _checkNextScriptStep();
     }
   }
+
+  void triggerOpponentProgress() {
+    _checkNextScriptStep();
+  }
 }

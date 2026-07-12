@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../services/console_network_service.dart';
 import '../controllers/chat_controller.dart';
 import '../models/message.dart';
 import '../models/script_item.dart';
@@ -26,16 +28,37 @@ class _ChatScreenState extends State<ChatScreen> {
   late bool _isDarkMode;
   bool _isLocked = false;
 
+  StreamSubscription? _consoleSubscription;
+
   @override
   void initState() {
     super.initState();
     _chatController = ChatController(config: widget.config);
     _isDarkMode = widget.config.initialUseDarkMode;
     _chatController.addListener(_onControllerUpdate);
+
+    if (ConsoleServer.instance.isRunning) {
+      _consoleSubscription = ConsoleServer.instance.commandStream.listen((cmd) {
+        if (cmd['action'] == 'trigger_key') {
+          if (mounted) {
+            setState(() {
+              if (_chatController.isMessageFullyTyped) {
+                _chatController.sendMessage();
+              } else {
+                _chatController.typeNextCharacter();
+              }
+            });
+          }
+        } else if (cmd['action'] == 'trigger_opponent') {
+          _chatController.triggerOpponentProgress();
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
+    _consoleSubscription?.cancel();
     _chatController.removeListener(_onControllerUpdate);
     _chatController.dispose();
     _scrollController.dispose();

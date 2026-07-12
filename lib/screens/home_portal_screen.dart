@@ -6,6 +6,7 @@ import 'video_setup_screen.dart';
 import 'playback_setup_screen.dart';
 import 'notification_setup_screen.dart';
 import 'home_setup_screen.dart';
+import 'console_portal_screen.dart';
 
 class HomePortalScreen extends StatelessWidget {
   const HomePortalScreen({super.key});
@@ -190,6 +191,18 @@ class HomePortalScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(builder: (context) => const HomeSetupScreen()),
+                      );
+                    },
+                  ),
+                  _buildPortalCard(
+                    context: context,
+                    title: "Director Remote Console",
+                    subtitle: "Wireless master device control over local Wi-Fi",
+                    icon: Icons.wifi_tethering,
+                    accentColor: const Color(0xFFFFB300), // Gold/Amber
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const ConsolePortalScreen()),
                       );
                     },
                   ),

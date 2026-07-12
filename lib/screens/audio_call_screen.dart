@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../models/project_config.dart';
 import '../models/call_config.dart';
+import '../services/console_network_service.dart';
 
 class AudioCallScreen extends StatefulWidget {
   final ProjectConfig? config;       // For backward compatibility
@@ -46,10 +47,29 @@ class _AudioCallScreenState extends State<AudioCallScreen> {
   String get ringtone => widget.callConfig?.ringtone ?? 'Marimba';
   double get ringtoneVolume => widget.callConfig?.ringtoneVolume ?? 0.8;
 
+  StreamSubscription? _consoleSubscription;
+
   @override
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
+
+    if (ConsoleServer.instance.isRunning) {
+      _consoleSubscription = ConsoleServer.instance.commandStream.listen((cmd) {
+        if (cmd['action'] == 'force_ring') {
+          if (mounted && !_isAnswered) {
+            setState(() {
+              _callStatus = "incoming call";
+            });
+            _playRingtone();
+          }
+        } else if (cmd['action'] == 'disconnect') {
+          if (mounted) {
+            _endCall();
+          }
+        }
+      });
+    }
 
     if (isIncoming) {
       _callStatus = "incoming call";
@@ -68,6 +88,7 @@ class _AudioCallScreenState extends State<AudioCallScreen> {
 
   @override
   void dispose() {
+    _consoleSubscription?.cancel();
     _timer?.cancel();
     _audioPlayer.stop();
     _audioPlayer.dispose();

@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../widgets/tracking_marker_painter.dart';
+import '../services/console_network_service.dart';
 
 class GreenScreenScreen extends StatefulWidget {
   const GreenScreenScreen({super.key});
@@ -20,6 +22,58 @@ class _GreenScreenScreenState extends State<GreenScreenScreen> {
   // Markers positions
   final List<Offset> _markerPositions = List.filled(5, Offset.zero);
   bool _isPositionsInitialized = false;
+
+  StreamSubscription? _consoleSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    if (ConsoleServer.instance.isRunning) {
+      _consoleSubscription = ConsoleServer.instance.commandStream.listen((cmd) {
+        if (cmd['action'] == 'change_color') {
+          _cycleColor();
+        } else if (cmd['action'] == 'toggle_lock') {
+          _toggleLock();
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _consoleSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _cycleColor() {
+    if (mounted) {
+      setState(() {
+        if (_chromaColor == const Color(0xFF00B140)) {
+          _chromaColor = const Color(0xFF0000FF);
+        } else if (_chromaColor == const Color(0xFF0000FF)) {
+          _chromaColor = const Color(0xFFFF00FF);
+        } else {
+          _chromaColor = const Color(0xFF00B140);
+        }
+      });
+    }
+  }
+
+  void _toggleLock() {
+    if (mounted) {
+      setState(() {
+        _isLocked = !_isLocked;
+        if (_isLocked) {
+          _showUnlockMessage();
+        } else {
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Screen Unlocked.")),
+          );
+        }
+      });
+    }
+  }
 
   // Constants
   static const double markerSize = 60.0;
