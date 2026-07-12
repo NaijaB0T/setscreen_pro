@@ -182,6 +182,7 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
                 top: 50,
                 right: 20,
                 child: FloatingActionButton.small(
+                  heroTag: null,
                   backgroundColor: Colors.black54,
                   foregroundColor: Colors.white,
                   onPressed: _handleLock,
@@ -193,6 +194,7 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
                 top: 50,
                 left: 20,
                 child: FloatingActionButton.small(
+                  heroTag: null,
                   backgroundColor: Colors.black54,
                   foregroundColor: Colors.white,
                   onPressed: () => Navigator.of(context).pop(),

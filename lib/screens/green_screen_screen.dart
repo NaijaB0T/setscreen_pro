@@ -400,6 +400,7 @@ class _GreenScreenScreenState extends State<GreenScreenScreen> {
                 top: 50,
                 right: 20,
                 child: FloatingActionButton.small(
+                  heroTag: null,
                   backgroundColor: Colors.black54,
                   foregroundColor: Colors.white,
                   child: const Icon(Icons.lock_open),
@@ -418,6 +419,7 @@ class _GreenScreenScreenState extends State<GreenScreenScreen> {
                   bottom: 40,
                   right: 20,
                   child: FloatingActionButton(
+                    heroTag: null,
                     backgroundColor: Colors.black87,
                     foregroundColor: Colors.tealAccent,
                     child: const Icon(Icons.settings),
@@ -433,6 +435,7 @@ class _GreenScreenScreenState extends State<GreenScreenScreen> {
                 top: 50,
                 left: 20,
                 child: FloatingActionButton.small(
+                  heroTag: null,
                   backgroundColor: Colors.black54,
                   foregroundColor: Colors.white,
                   child: const Icon(Icons.arrow_back),

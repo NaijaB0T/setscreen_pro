@@ -351,9 +351,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
         curve: Curves.easeOutBack,
         builder: (context, value, child) {
           return Opacity(
-            opacity: value,
+            opacity: value.clamp(0.0, 1.0),
             child: Transform.translate(
-              offset: Offset(0, (value - 1.0) * 80),
+              offset: Offset(0, (value.clamp(0.0, 1.0) - 1.0) * 80),
               child: child,
             ),
           );
@@ -429,6 +429,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               top: 50,
               right: 20,
               child: FloatingActionButton.small(
+                heroTag: null,
                 backgroundColor: Colors.black54,
                 foregroundColor: Colors.white,
                 onPressed: _handleLock,
@@ -440,6 +441,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               top: 50,
               left: 20,
               child: FloatingActionButton.small(
+                heroTag: null,
                 backgroundColor: Colors.black54,
                 foregroundColor: Colors.white,
                 onPressed: () => Navigator.of(context).pop(),
