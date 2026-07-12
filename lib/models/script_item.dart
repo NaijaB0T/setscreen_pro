@@ -6,4 +6,14 @@ class ScriptItem {
     required this.text,
     required this.isUser,
   });
+
+  Map<String, dynamic> toJson() => {
+    'text': text,
+    'isUser': isUser,
+  };
+
+  factory ScriptItem.fromJson(Map<String, dynamic> json) => ScriptItem(
+    text: json['text'] as String,
+    isUser: json['isUser'] as bool,
+  );
 }

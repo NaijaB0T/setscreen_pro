@@ -2,14 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:setscreen_pro/main.dart';
 
 void main() {
-  testWidgets('SetScreenApp smoke test', (WidgetTester tester) async {
+  testWidgets('SetScreenApp SetupScreen smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const SetScreenApp());
 
-    // Verify that the contact name is displayed
-    expect(find.text('Michael Naizu'), findsOneWidget);
+    // Verify that the setup screen title is displayed
+    expect(find.text('SetScreen Dashboard'), findsOneWidget);
 
-    // Verify that the text input displays the placeholder "iMessage"
-    expect(find.text('iMessage'), findsOneWidget);
+    // Verify that the "START TAKE" button is present
+    expect(find.text('START TAKE'), findsOneWidget);
   });
 }

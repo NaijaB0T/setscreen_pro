@@ -1,12 +1,19 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../controllers/chat_controller.dart';
 import '../models/message.dart';
+import '../models/project_config.dart';
 import '../widgets/live_typing_keyboard.dart';
 import '../widgets/typing_indicator.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  final ProjectConfig config;
+
+  const ChatScreen({
+    super.key,
+    required this.config,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -15,12 +22,13 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   late ChatController _chatController;
   final ScrollController _scrollController = ScrollController();
-  bool _isDarkMode = true; // Default to dark mode for screen insertion props
+  late bool _isDarkMode;
 
   @override
   void initState() {
     super.initState();
-    _chatController = ChatController();
+    _chatController = ChatController(config: widget.config);
+    _isDarkMode = widget.config.initialUseDarkMode;
     _chatController.addListener(_onControllerUpdate);
   }
 
@@ -56,6 +64,15 @@ class _ChatScreenState extends State<ChatScreen> {
     SystemChrome.setSystemUIOverlayStyle(
       _isDarkMode ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
     );
+  }
+
+  String _getInitials(String name) {
+    if (name.trim().isEmpty) return "U";
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.length > 1) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0][0].toUpperCase();
   }
 
   @override
@@ -120,8 +137,20 @@ class _ChatScreenState extends State<ChatScreen> {
               child: Row(
                 children: [
                   // Left back chevron
-                  Icon(Icons.arrow_back_ios_new, color: userBubbleColor, size: 20),
-                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        children: [
+                          Icon(Icons.arrow_back_ios_new, color: userBubbleColor, size: 20),
+                          const SizedBox(width: 4),
+                          Text("Setup", style: TextStyle(color: userBubbleColor, fontSize: 16)),
+                        ],
+                      ),
+                    ),
+                  ),
                   
                   // Double tap title for instant theme switch, or click buttons
                   Expanded(
@@ -136,10 +165,15 @@ class _ChatScreenState extends State<ChatScreen> {
                           CircleAvatar(
                             radius: 20,
                             backgroundColor: Colors.grey[400],
-                            child: const Text(
-                              "MN",
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                            ),
+                            backgroundImage: widget.config.avatarPath != null && widget.config.avatarPath!.isNotEmpty
+                                ? FileImage(File(widget.config.avatarPath!))
+                                : null,
+                            child: widget.config.avatarPath == null || widget.config.avatarPath!.isEmpty
+                                ? Text(
+                                    _getInitials(widget.config.contactName),
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  )
+                                : null,
                           ),
                           const SizedBox(height: 4),
                           // Name
@@ -147,7 +181,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                "Michael Naizu",
+                                widget.config.contactName,
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,

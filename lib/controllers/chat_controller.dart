@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/message.dart';
 import '../models/script_item.dart';
+import '../models/project_config.dart';
 
 class ChatController extends ChangeNotifier {
+  final ProjectConfig config;
   final List<ScriptItem> _script = [];
   final List<Message> _visibleMessages = [];
   
@@ -12,15 +14,13 @@ class ChatController extends ChangeNotifier {
   int _characterIndex = 0;
   bool _isOpponentTyping = false;
   
-  // Customization (Prop Tools)
-  bool _isGreenBubble = false;
+  // Customization (Prop Tools toggled at runtime)
+  late bool _isGreenBubble;
 
-  ChatController({List<ScriptItem>? customScript}) {
-    if (customScript != null && customScript.isNotEmpty) {
-      _script.addAll(customScript);
-    } else {
-      _loadDefaultScript();
-    }
+  ChatController({required this.config}) {
+    _script.addAll(config.script);
+    _isGreenBubble = config.initialUseGreenBubbles;
+    
     // Start the script flow
     _checkNextScriptStep();
   }
@@ -45,35 +45,6 @@ class ChatController extends ChangeNotifier {
   void toggleBubbleColor() {
     _isGreenBubble = !_isGreenBubble;
     notifyListeners();
-  }
-
-  void _loadDefaultScript() {
-    _script.addAll([
-      ScriptItem(
-        text: "Can't believe he did that.",
-        isUser: true,
-      ),
-      ScriptItem(
-        text: "Right?",
-        isUser: false,
-      ),
-      ScriptItem(
-        text: "Mike send me over your script",
-        isUser: true,
-      ),
-      ScriptItem(
-        text: "I thought you said it was finished?",
-        isUser: false,
-      ),
-      ScriptItem(
-        text: "It is, I just need to double-check the final scene structure.",
-        isUser: true,
-      ),
-      ScriptItem(
-        text: "Alright, sending it now.",
-        isUser: false,
-      ),
-    ]);
   }
 
   // Intercept key tap and type the next character from the current script message
@@ -138,8 +109,8 @@ class ChatController extends ChangeNotifier {
     _isOpponentTyping = true;
     notifyListeners();
 
-    // 2-second typing delay to simulate realistic opponent responses
-    await Future.delayed(const Duration(seconds: 2));
+    // Custom delay from config
+    await Future.delayed(Duration(seconds: config.opponentTypingDelay));
 
     // Make sure we haven't reset the chat while waiting
     if (_currentScriptIndex < _script.length && _script[_currentScriptIndex] == scriptMsg) {
