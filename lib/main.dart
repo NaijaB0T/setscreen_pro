@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'screens/setup_screen.dart';
+import 'screens/home_portal_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,8 +30,8 @@ class SetScreenApp extends StatelessWidget {
         brightness: Brightness.dark,
         useMaterial3: true,
       ),
-      themeMode: ThemeMode.system, // Dynamically set by SetupScreen configurations
-      home: const SetupScreen(),
+      themeMode: ThemeMode.dark, // Default to dark mode for prop screens
+      home: const HomePortalScreen(),
     );
   }
 }
