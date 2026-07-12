@@ -5,6 +5,7 @@ import 'green_screen_screen.dart';
 import 'call_setup_screen.dart';
 import 'video_setup_screen.dart';
 import 'playback_setup_screen.dart';
+import 'notification_setup_screen.dart';
 
 class HomePortalScreen extends StatelessWidget {
   const HomePortalScreen({super.key});
@@ -203,7 +204,11 @@ class HomePortalScreen extends StatelessWidget {
                     subtitle: "Custom notification overlays",
                     icon: Icons.notifications,
                     accentColor: const Color(0xFFAF52DE), // Purple
-                    onTap: () => _showComingSoon(context),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const NotificationSetupScreen()),
+                      );
+                    },
                   ),
                   _buildPortalCard(
                     context: context,
