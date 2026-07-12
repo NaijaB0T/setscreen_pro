@@ -27,10 +27,13 @@ class _SetupScreenState extends State<SetupScreen> {
   bool _useGreenBubbles = false;
   bool _useDarkMode = true;
   
-  // Sprint 3 Call configurations
+  // Call configurations
   SceneType _activeScene = SceneType.text;
   bool _isIncomingCall = true;
   String? _videoCallerPath;
+
+  // Platform styling (Sprint 5)
+  PlatformStyle _selectedPlatform = PlatformStyle.ios;
 
   @override
   void initState() {
@@ -62,6 +65,7 @@ class _SetupScreenState extends State<SetupScreen> {
           _activeScene = config.sceneType;
           _isIncomingCall = config.isIncomingCall;
           _videoCallerPath = config.videoCallerPath;
+          _selectedPlatform = config.platformStyle;
         });
       } catch (e) {
         debugPrint("Error loading saved config: $e");
@@ -81,10 +85,13 @@ class _SetupScreenState extends State<SetupScreen> {
       _activeScene = SceneType.text;
       _isIncomingCall = true;
       _videoCallerPath = null;
+      _selectedPlatform = PlatformStyle.ios;
       _scriptController.text = 
           "Them: Can't believe he did that.\n"
           "Me: Right?\n"
-          "Me: Mike send me over your script\n"
+          "Me: [Photo]\n"
+          "Them: [Map]\n"
+          "Me: [Audio]\n"
           "Them: I thought you said it was finished?\n"
           "Me: It is, I just need to double-check the final scene structure.\n"
           "Them: Alright, sending it now.";
@@ -92,7 +99,19 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   String _formatScriptForTextField(List<ScriptItem> script) {
-    return script.map((item) => "${item.isUser ? 'Me' : 'Them'}: ${item.text}").join('\n');
+    return script.map((item) {
+      String prefix = item.isUser ? 'Me' : 'Them';
+      switch (item.type) {
+        case MessageType.photo:
+          return "$prefix: [Photo]";
+        case MessageType.map:
+          return "$prefix: [Map]";
+        case MessageType.audio:
+          return "$prefix: [Audio]";
+        case MessageType.text:
+          return "$prefix: ${item.text}";
+      }
+    }).join('\n');
   }
 
   List<ScriptItem> _parseScriptText(String text) {
@@ -101,19 +120,38 @@ class _SetupScreenState extends State<SetupScreen> {
     for (var line in lines) {
       line = line.trim();
       if (line.isEmpty) continue;
+      
+      bool isUser = true;
+      String lineContent = "";
+      
       if (line.toLowerCase().startsWith('me:')) {
-        final content = line.substring(3).trim();
-        if (content.isNotEmpty) {
-          parsed.add(ScriptItem(text: content, isUser: true));
-        }
+        isUser = true;
+        lineContent = line.substring(3).trim();
       } else if (line.toLowerCase().startsWith('them:')) {
-        final content = line.substring(5).trim();
-        if (content.isNotEmpty) {
-          parsed.add(ScriptItem(text: content, isUser: false));
-        }
+        isUser = false;
+        lineContent = line.substring(5).trim();
       } else {
-        parsed.add(ScriptItem(text: line, isUser: true));
+        isUser = true;
+        lineContent = line;
       }
+      
+      if (lineContent.isEmpty) continue;
+      
+      MessageType type = MessageType.text;
+      String msgText = lineContent;
+      
+      if (lineContent == '[Photo]') {
+        type = MessageType.photo;
+        msgText = "";
+      } else if (lineContent == '[Map]') {
+        type = MessageType.map;
+        msgText = "";
+      } else if (lineContent == '[Audio]') {
+        type = MessageType.audio;
+        msgText = "";
+      }
+      
+      parsed.add(ScriptItem(text: msgText, isUser: isUser, type: type));
     }
     return parsed;
   }
@@ -177,6 +215,7 @@ class _SetupScreenState extends State<SetupScreen> {
       sceneType: _activeScene,
       isIncomingCall: _isIncomingCall,
       videoCallerPath: _videoCallerPath,
+      platformStyle: _selectedPlatform,
     );
 
     // Save configuration
@@ -204,133 +243,218 @@ class _SetupScreenState extends State<SetupScreen> {
     }
   }
 
+  Widget _buildFrostedContainer({required Widget child}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05), // Frosted glass look
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08), width: 1),
+      ),
+      padding: const EdgeInsets.all(16.0),
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("SetScreen Dashboard"),
-        centerTitle: true,
+    return Theme(
+      data: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: Colors.black,
+        colorScheme: const ColorScheme.dark(
+          primary: Colors.tealAccent,
+          secondary: Colors.teal,
+        ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Segmented Scene Selector at the top
-              Center(
-                child: SegmentedButton<SceneType>(
-                  segments: const <ButtonSegment<SceneType>>[
-                    ButtonSegment<SceneType>(
-                      value: SceneType.text,
-                      label: Text('Text Chat'),
-                      icon: Icon(Icons.chat),
+      child: Scaffold(
+        backgroundColor: Colors.black, // Premium pure black
+        appBar: AppBar(
+          title: const Text(
+            "MESSAGES CONFIGURATION",
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.black,
+          elevation: 0,
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Segmented Scene Selector
+                Center(
+                  child: SegmentedButton<SceneType>(
+                    style: const ButtonStyle(
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    ButtonSegment<SceneType>(
-                      value: SceneType.audioCall,
-                      label: Text('Audio Call'),
-                      icon: Icon(Icons.phone),
-                    ),
-                    ButtonSegment<SceneType>(
-                      value: SceneType.videoCall,
-                      label: Text('Video Call'),
-                      icon: Icon(Icons.videocam),
-                    ),
-                  ],
-                  selected: <SceneType>{_activeScene},
-                  onSelectionChanged: (Set<SceneType> newSelection) {
-                    setState(() {
-                      _activeScene = newSelection.first;
-                    });
-                  },
+                    segments: const <ButtonSegment<SceneType>>[
+                      ButtonSegment<SceneType>(
+                        value: SceneType.text,
+                        label: Text('Text Chat', style: TextStyle(fontSize: 12)),
+                        icon: Icon(Icons.chat, size: 16),
+                      ),
+                      ButtonSegment<SceneType>(
+                        value: SceneType.audioCall,
+                        label: Text('Audio', style: TextStyle(fontSize: 12)),
+                        icon: Icon(Icons.phone, size: 16),
+                      ),
+                      ButtonSegment<SceneType>(
+                        value: SceneType.videoCall,
+                        label: Text('FaceTime', style: TextStyle(fontSize: 12)),
+                        icon: Icon(Icons.videocam, size: 16),
+                      ),
+                    ],
+                    selected: <SceneType>{_activeScene},
+                    onSelectionChanged: (Set<SceneType> newSelection) {
+                      setState(() {
+                        _activeScene = newSelection.first;
+                      });
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Avatar & Name Card
-              Center(
-                child: Column(
-                  children: [
-                    GestureDetector(
-                      onTap: _pickAvatar,
-                      child: Stack(
-                        children: [
-                          CircleAvatar(
-                            radius: 45,
-                            backgroundColor: Colors.grey[300],
-                            backgroundImage: _avatarPath != null && File(_avatarPath!).existsSync()
-                                ? FileImage(File(_avatarPath!))
-                                : null,
-                            child: _avatarPath == null || !File(_avatarPath!).existsSync()
-                                ? const Icon(Icons.person, size: 50, color: Colors.white)
-                                : null,
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: CircleAvatar(
-                              radius: 14,
-                              backgroundColor: Theme.of(context).colorScheme.primary,
-                              child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
+                // Frosted Card 1: Avatar & Identity
+                const Text("CONTACT IDENTITY", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white54, letterSpacing: 1)),
+                const SizedBox(height: 8),
+                _buildFrostedContainer(
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: _pickAvatar,
+                        child: Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 36,
+                              backgroundColor: Colors.white10,
+                              backgroundImage: _avatarPath != null && File(_avatarPath!).existsSync()
+                                  ? FileImage(File(_avatarPath!))
+                                  : null,
+                              child: _avatarPath == null || !File(_avatarPath!).existsSync()
+                                  ? const Icon(Icons.person, size: 40, color: Colors.white54)
+                                  : null,
                             ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: CircleAvatar(
+                                radius: 11,
+                                backgroundColor: Colors.tealAccent,
+                                child: const Icon(Icons.edit, size: 11, color: Colors.black),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _nameController,
+                          style: const TextStyle(color: Colors.white, fontSize: 16),
+                          decoration: const InputDecoration(
+                            labelText: "Contact Name",
+                            labelStyle: TextStyle(color: Colors.white38),
+                            border: UnderlineInputBorder(),
+                            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+                            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.tealAccent)),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return "Please enter a contact name";
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // DYNAMIC CONTROLS
+                if (_activeScene == SceneType.text) ...[
+                  // Frosted Card 2: Platform Engine styling (Sprint 5)
+                  const Text("PLATFORM STYLE", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white54, letterSpacing: 1)),
+                  const SizedBox(height: 8),
+                  _buildFrostedContainer(
+                    child: Center(
+                      child: SegmentedButton<PlatformStyle>(
+                        segments: const <ButtonSegment<PlatformStyle>>[
+                          ButtonSegment<PlatformStyle>(
+                            value: PlatformStyle.ios,
+                            label: Text('iOS iMessage', style: TextStyle(fontSize: 11)),
+                            icon: Icon(Icons.apple, size: 14),
+                          ),
+                          ButtonSegment<PlatformStyle>(
+                            value: PlatformStyle.android,
+                            label: Text('Android SMS', style: TextStyle(fontSize: 11)),
+                            icon: Icon(Icons.android, size: 14),
+                          ),
+                          ButtonSegment<PlatformStyle>(
+                            value: PlatformStyle.generic,
+                            label: Text('Generic', style: TextStyle(fontSize: 11)),
+                            icon: Icon(Icons.devices, size: 14),
                           ),
                         ],
+                        selected: <PlatformStyle>{_selectedPlatform},
+                        onSelectionChanged: (Set<PlatformStyle> val) {
+                          setState(() {
+                            _selectedPlatform = val.first;
+                          });
+                        },
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      "Tap to set contact avatar",
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Contact Name Field
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: "Contact Name",
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.contact_page),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return "Please enter a contact name";
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // DYNAMIC SETTINGS DEPENDING ON SCENE SELECTION
-              if (_activeScene == SceneType.text) ...[
-                // Opponent Delay Slider (only for Text)
-                Card(
-                  margin: EdgeInsets.zero,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
-                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
+                  const SizedBox(height: 24),
+
+                  // Frosted Card 3: Screenplay Script Box
+                  const Text("CONVERSATION SCRIPT", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white54, letterSpacing: 1)),
+                  const SizedBox(height: 8),
+                  _buildFrostedContainer(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextFormField(
+                          controller: _scriptController,
+                          maxLines: 8,
+                          style: const TextStyle(fontFamily: 'Courier', fontSize: 13, color: Colors.tealAccent),
+                          keyboardType: TextInputType.multiline,
+                          decoration: const InputDecoration(
+                            hintText: "Me: How is the shoot going?\nThem: [Photo]\nMe: [Map]\nThem: [Audio]\nMe: Finished!",
+                            hintStyle: TextStyle(color: Colors.white24, fontSize: 13),
+                            border: InputBorder.none,
+                          ),
+                          validator: (value) {
+                            if (_activeScene == SceneType.text && (value == null || value.trim().isEmpty)) {
+                              return "Please write a screenplay script";
+                            }
+                            return null;
+                          },
+                        ),
+                        const Divider(color: Colors.white10),
+                        const Text(
+                          "Tags: [Photo] for Images, [Map] for Map Box, [Audio] for Audio waveform.",
+                          style: TextStyle(fontSize: 10, color: Colors.white38),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Frosted Card 4: Settings Toggles
+                  const Text("SIMULATOR TIMINGS & LOOK", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white54, letterSpacing: 1)),
+                  const SizedBox(height: 8),
+                  _buildFrostedContainer(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text("Opponent Typing Delay", style: TextStyle(fontWeight: FontWeight.w500)),
-                            Text(
-                              "$_typingDelay sec",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
+                            const Text("Opponent Typing Delay", style: TextStyle(fontSize: 14)),
+                            Text("$_typingDelay sec", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.tealAccent)),
                           ],
                         ),
                         Slider(
@@ -338,32 +462,18 @@ class _SetupScreenState extends State<SetupScreen> {
                           min: 1,
                           max: 10,
                           divisions: 9,
+                          activeColor: Colors.tealAccent,
+                          inactiveColor: Colors.white12,
                           onChanged: (val) {
                             setState(() {
                               _typingDelay = val.toInt();
                             });
                           },
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Layout Toggles (only for Text)
-                Row(
-                  children: [
-                    Expanded(
-                      child: Card(
-                        margin: EdgeInsets.zero,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: SwitchListTile(
-                          title: const Text("Green Bubbles", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                          subtitle: const Text("Standard SMS style", style: TextStyle(fontSize: 10)),
+                        const Divider(color: Colors.white10, height: 24),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text("SMS Green bubbles (iOS)", style: TextStyle(fontSize: 14)),
                           value: _useGreenBubbles,
                           onChanged: (val) {
                             setState(() {
@@ -371,20 +481,9 @@ class _SetupScreenState extends State<SetupScreen> {
                             });
                           },
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Card(
-                        margin: EdgeInsets.zero,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: SwitchListTile(
-                          title: const Text("Dark Theme", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                          subtitle: const Text("Low ambient reflection", style: TextStyle(fontSize: 10)),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text("Dark Theme mode", style: TextStyle(fontSize: 14)),
                           value: _useDarkMode,
                           onChanged: (val) {
                             setState(() {
@@ -392,80 +491,37 @@ class _SetupScreenState extends State<SetupScreen> {
                             });
                           },
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Screenplay Script input (only for Text)
-                const Text(
-                  "Conversation Script",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  "Prefix lines with 'Me:' for user and 'Them:' for the opponent.",
-                  style: TextStyle(fontSize: 11, color: Colors.grey),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _scriptController,
-                  maxLines: 8,
-                  keyboardType: TextInputType.multiline,
-                  decoration: const InputDecoration(
-                    hintText: "Me: How is the shoot going?\nThem: Almost done, preparing camera.",
-                    border: OutlineInputBorder(),
                   ),
-                  validator: (value) {
-                    if (_activeScene == SceneType.text && (value == null || value.trim().isEmpty)) {
-                      return "Please write a screenplay script";
-                    }
-                    return null;
-                  },
-                ),
-              ] else if (_activeScene == SceneType.audioCall) ...[
-                // Call Options (Incoming vs Outgoing)
-                Card(
-                  margin: EdgeInsets.zero,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
-                    borderRadius: BorderRadius.circular(8),
+                ] else if (_activeScene == SceneType.audioCall) ...[
+                  // Audio Call Options
+                  const Text("AUDIO CALL SETUP", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white54, letterSpacing: 1)),
+                  const SizedBox(height: 8),
+                  _buildFrostedContainer(
+                    child: SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text("Incoming Audio Call", style: TextStyle(fontSize: 14)),
+                      subtitle: const Text("Slide to answer; disable for dial Outgoing", style: TextStyle(fontSize: 10, color: Colors.white38)),
+                      value: _isIncomingCall,
+                      onChanged: (val) {
+                        setState(() {
+                          _isIncomingCall = val;
+                        });
+                      },
+                    ),
                   ),
-                  child: SwitchListTile(
-                    title: const Text("Incoming Call", style: TextStyle(fontWeight: FontWeight.w500)),
-                    subtitle: const Text("True: Show Slide to Answer; False: Simulate dial Outgoing", style: TextStyle(fontSize: 11)),
-                    value: _isIncomingCall,
-                    onChanged: (val) {
-                      setState(() {
-                        _isIncomingCall = val;
-                      });
-                    },
-                  ),
-                ),
-              ] else if (_activeScene == SceneType.videoCall) ...[
-                // Video Call Options (Select incoming video file)
-                Card(
-                  margin: EdgeInsets.zero,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+                ] else if (_activeScene == SceneType.videoCall) ...[
+                  // Video Call Options
+                  const Text("FACETIME INCOMING STREAM", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white54, letterSpacing: 1)),
+                  const SizedBox(height: 8),
+                  _buildFrostedContainer(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          "FaceTime Incoming Stream Asset",
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          "Select a video file from your device library to stream as the incoming caller's video background.",
-                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                          "Select a video file to stream as the incoming caller's video background feed.",
+                          style: TextStyle(fontSize: 11, color: Colors.white38),
                         ),
                         const SizedBox(height: 16),
                         Row(
@@ -481,7 +537,7 @@ class _SetupScreenState extends State<SetupScreen> {
                                 _videoCallerPath != null
                                     ? "Selected: ${File(_videoCallerPath!).path.split('/').last}"
                                     : "No video selected",
-                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                style: const TextStyle(fontSize: 12, color: Colors.white38),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -490,32 +546,32 @@ class _SetupScreenState extends State<SetupScreen> {
                       ],
                     ),
                   ),
-                ),
-              ],
-              const SizedBox(height: 32),
+                ],
+                const SizedBox(height: 40),
 
-              // Start Take Button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: _startTake,
-                  icon: const Icon(Icons.play_arrow),
-                  label: const Text(
-                    "START TAKE",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                // Start Take Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: _startTake,
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text(
+                      "START TAKE",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.tealAccent,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-            ],
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         ),
       ),

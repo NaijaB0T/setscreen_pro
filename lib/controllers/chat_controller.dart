@@ -38,6 +38,10 @@ class ChatController extends ChangeNotifier {
     if (_currentScriptIndex >= _script.length) return false;
     final currentScriptMsg = _script[_currentScriptIndex];
     if (!currentScriptMsg.isUser) return false;
+    
+    if (currentScriptMsg.type != MessageType.text) {
+      return _characterIndex > 0;
+    }
     return _characterIndex >= currentScriptMsg.text.length && _currentTypedText.isNotEmpty;
   }
 
@@ -54,6 +58,15 @@ class ChatController extends ChangeNotifier {
     final currentScriptMsg = _script[_currentScriptIndex];
     if (!currentScriptMsg.isUser) return;
 
+    if (currentScriptMsg.type != MessageType.text) {
+      if (_characterIndex == 0) {
+        _currentTypedText = "[Attachment: ${currentScriptMsg.type.name.toUpperCase()}]";
+        _characterIndex = 1;
+        notifyListeners();
+      }
+      return;
+    }
+
     final targetText = currentScriptMsg.text;
     if (_characterIndex < targetText.length) {
       _currentTypedText += targetText[_characterIndex];
@@ -66,12 +79,15 @@ class ChatController extends ChangeNotifier {
   void sendMessage() {
     if (!isMessageFullyTyped) return;
 
+    final currentScriptMsg = _script[_currentScriptIndex];
+    
     final newMessage = Message(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      text: _currentTypedText,
+      text: currentScriptMsg.type == MessageType.text ? _currentTypedText : "",
       sender: MessageSender.sender,
       timestamp: DateTime.now(),
       isTyped: true,
+      type: currentScriptMsg.type,
     );
 
     _visibleMessages.add(newMessage);
@@ -116,10 +132,11 @@ class ChatController extends ChangeNotifier {
     if (_currentScriptIndex < _script.length && _script[_currentScriptIndex] == scriptMsg) {
       final newMessage = Message(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        text: scriptMsg.text,
+        text: scriptMsg.type == MessageType.text ? scriptMsg.text : "",
         sender: MessageSender.receiver,
         timestamp: DateTime.now(),
         isTyped: false,
+        type: scriptMsg.type,
       );
 
       _visibleMessages.add(newMessage);

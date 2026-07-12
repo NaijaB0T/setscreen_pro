@@ -1,6 +1,8 @@
+import 'script_item.dart';
+
 enum MessageSender {
-  sender,   // User (blue/green bubble on the right)
-  receiver, // Opponent (gray bubble on the left)
+  sender,   // User (right side)
+  receiver, // Opponent (left side)
 }
 
 class Message {
@@ -9,6 +11,7 @@ class Message {
   final MessageSender sender;
   final DateTime timestamp;
   final bool isTyped;
+  final MessageType type;
 
   Message({
     required this.id,
@@ -16,6 +19,7 @@ class Message {
     required this.sender,
     required this.timestamp,
     required this.isTyped,
+    this.type = MessageType.text,
   });
 
   bool get isUser => sender == MessageSender.sender;

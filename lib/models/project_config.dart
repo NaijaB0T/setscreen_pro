@@ -6,6 +6,12 @@ enum SceneType {
   videoCall,
 }
 
+enum PlatformStyle {
+  ios,
+  android,
+  generic,
+}
+
 class ProjectConfig {
   final String contactName;
   final String? avatarPath;
@@ -16,6 +22,7 @@ class ProjectConfig {
   final SceneType sceneType;
   final bool isIncomingCall;
   final String? videoCallerPath;
+  final PlatformStyle platformStyle;
 
   ProjectConfig({
     required this.contactName,
@@ -27,6 +34,7 @@ class ProjectConfig {
     required this.sceneType,
     this.isIncomingCall = true,
     this.videoCallerPath,
+    this.platformStyle = PlatformStyle.ios,
   });
 
   Map<String, dynamic> toJson() => {
@@ -39,6 +47,7 @@ class ProjectConfig {
     'sceneType': sceneType.name,
     'isIncomingCall': isIncomingCall,
     'videoCallerPath': videoCallerPath,
+    'platformStyle': platformStyle.name,
   };
 
   factory ProjectConfig.fromJson(Map<String, dynamic> json) {
@@ -50,6 +59,15 @@ class ProjectConfig {
     if (sceneTypeName != null) {
       try {
         parsedSceneType = SceneType.values.byName(sceneTypeName);
+      } catch (_) {}
+    }
+
+    // Parse platformStyle safely
+    PlatformStyle parsedPlatformStyle = PlatformStyle.ios;
+    final platformStyleName = json['platformStyle'] as String?;
+    if (platformStyleName != null) {
+      try {
+        parsedPlatformStyle = PlatformStyle.values.byName(platformStyleName);
       } catch (_) {}
     }
 
@@ -65,6 +83,7 @@ class ProjectConfig {
       sceneType: parsedSceneType,
       isIncomingCall: json['isIncomingCall'] as bool? ?? true,
       videoCallerPath: json['videoCallerPath'] as String?,
+      platformStyle: parsedPlatformStyle,
     );
   }
 }
